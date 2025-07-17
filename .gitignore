@@ -207,6 +207,6 @@ marimo/_lsp/
 __marimo__/
 
 # Project Files
-chat.db
+*.db
 cloud.py
 *.jpg
