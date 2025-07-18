@@ -210,3 +210,5 @@ __marimo__/
 *.db
 cloud.py
 *.jpg
+telemetry.py
+test.py
