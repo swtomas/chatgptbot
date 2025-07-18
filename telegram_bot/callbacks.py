@@ -41,6 +41,15 @@ async def chatgpto3(callback: CallbackQuery, state: FSMContext):
  except Exception as e:
   print(e)      
 
+@router.callback_query(F.data == "gemini")
+async def gemini(callback: CallbackQuery, state: FSMContext):
+ try:
+  await callback.message.edit_text(text=f"Выбрана нейросеть Gemini 2.5. Напишите ваш запрос:", reply_markup=await buttons.back())
+  await database.delete(callback.from_user.id)
+  await state.set_state(forms.Form.gemini)
+ except Exception as e:
+  print(e)   
+
 @router.callback_query(F.data == "deepseekr1")
 async def deepseekr1(callback: CallbackQuery, state: FSMContext):
  try:

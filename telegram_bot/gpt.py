@@ -2,12 +2,18 @@ import aiohttp
 import os
 import random
 import string
+import main
+import database
 import urllib.parse
 from dotenv import load_dotenv
+from google import genai
 
 load_dotenv()
+api_key=os.getenv("GEMINI")
 token = os.getenv("AITOKEN")
 referrer = os.getenv("REFERRER")
+client = genai.Client(api_key=api_key)
+bot = main.bot
 
 def generate_filename(length=6):
     chars = string.ascii_letters + string.digits
@@ -93,3 +99,14 @@ async def redimage(promt, image_url):
  except aiohttp.ClientError as e:
         print(e)
         return False 
+ 
+async def gemini(promt, chat_id, message_id, user):
+    response = await client.aio.models.generate_content_stream(model="gemini-2.5-flash", contents=promt)
+    answer = ""
+    async for chunk in response:
+     answer +=chunk.text
+     await bot.edit_message_text(text=answer, chat_id=chat_id, message_id=message_id)
+    await database.save(user.id, "user", promt)
+    await database.save(user.id, "assistant", answer) 
+
+

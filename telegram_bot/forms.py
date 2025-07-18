@@ -16,11 +16,13 @@ BOT_TOKEN = os.getenv("TOKEN")
 bot = Bot(token=BOT_TOKEN) 
 router = Router()
 promt = dict.promt
+promt_gemini = dict.promt_gemini
 
 class Form(StatesGroup):
  chatgpt=State()
  chatgptsearch=State()
  chatgpto3 = State()
+ gemini = State()
  deepseekr1 = State()
  deepseekv3 = State()
  chatgptimage = State()
@@ -164,6 +166,23 @@ async def chatgpto3(message: Message, state: FSMContext):
   await message.answer(f"Произошла ошибка: {e}")
   await message.reply(text=answer) 
   await state.set_state(Form.chatgpto3)
+
+@router.message(Form.gemini)
+async def chatgpt(message: Message, state: FSMContext):
+ try:
+  if message.photo:
+   await message.answer("скоро...")
+  else: 
+   sent = await message.answer("подключение...")
+   history_messages = await database.get(user_id=message.from_user.id)
+   messages = [
+    {"role": "system", "content": promt_gemini}, 
+   *[{"role": role, "content": content} for role, content in history_messages],
+    {"role": "user", "content": message.text}
+            ] 
+   await gpt.gemini(chat_id=sent.chat.id, message_id=sent.message_id, promt=str(messages), user=message.from_user)
+ except Exception as e:
+  print(e) 
 
 @router.message(Form.deepseekr1)
 async def deepseekr1(message: Message, state: FSMContext):
