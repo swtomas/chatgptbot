@@ -1,9 +1,7 @@
 import aiosqlite
-import os
 
 DB_NAME = "telegram_bot/chat.db"
 DB_USNAME = "telegram_bot/users.db"
-
 
 async def init():
     async with aiosqlite.connect(DB_NAME) as db:

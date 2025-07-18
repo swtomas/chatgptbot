@@ -200,7 +200,25 @@ async def deepseekr1(message: Message, state: FSMContext):
 async def gptimage(message: Message, state: FSMContext):
  try:
    if message.photo:
-    pass
+     if message.caption == None:
+      await message.reply("Пожалуйста, укажите что нужно сделать в подписи к фотографии")
+      return
+     sent=await message.answer("⌛")
+     await asyncio.sleep(0,5)
+     await bot.send_chat_action(chat_id=message.chat.id, action="upload_photo")
+     photo = message.photo[-1]  
+     file = await bot.get_file(photo.file_id)
+     file_path = f"telegram_bot/photos/{file.file_id}.jpg"
+     await bot.download_file(file.file_path, file_path)
+     image_url = await gpt.upload_image(file_path)
+     image = await gpt.redimage(promt=message.caption, image_url=image_url)
+     if image == False:
+      await message.answer("Что-то пошло не так. Попробуйте позже.")
+      return
+     photo = FSInputFile(image)
+     await sent.delete()
+     await message.answer_photo(photo=photo)
+     os.remove(image)
    else:
     sent = await message.answer("🎨")
     image = await gpt.genimage(promt=message.text)
@@ -209,6 +227,7 @@ async def gptimage(message: Message, state: FSMContext):
      await message.answer("Что-то пошло не так. Попробуйте позже.")
      return
     photo = FSInputFile(image)
+    await sent.delete()
     await message.answer_photo(photo=photo)
     os.remove(image)
     

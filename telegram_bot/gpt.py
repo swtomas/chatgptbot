@@ -47,12 +47,10 @@ async def upload_image(path):
 
 async def genimage(promt):
  params = {
-    "width": 1280,
-    "height": 720,
     "seed": 42,
-    "model": "gptimage",
+    "model": "kontext",
     "nologo": "true", 
-    "token": token 
+    "referrer": referrer 
  }
 
  encoded_prompt = urllib.parse.quote(promt)
@@ -70,3 +68,28 @@ async def genimage(promt):
  except aiohttp.ClientError as e:
         print(e)
         return False
+ 
+async def redimage(promt, image_url):
+ params = {
+    "seed": 42,
+    "model": "gptimage",
+    "nologo": "true", 
+    "image": image_url,
+    "referrer": referrer 
+ }
+
+ encoded_prompt = urllib.parse.quote(promt)
+ url = f"https://image.pollinations.ai/prompt/{encoded_prompt}"
+ try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, params=params, timeout=300) as response:
+                response.raise_for_status() 
+                content = await response.read()
+                name=generate_filename()
+                with open(f'telegram_bot/{name}.jpg', 'wb') as f:
+                    f.write(content)
+                return f"telegram_bot/{name}.jpg"
+                
+ except aiohttp.ClientError as e:
+        print(e)
+        return False 
