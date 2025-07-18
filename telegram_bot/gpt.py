@@ -106,7 +106,6 @@ async def gemini(promt, chat_id, message_id, user):
     async for chunk in response:
      answer +=chunk.text
      await bot.edit_message_text(text=answer, chat_id=chat_id, message_id=message_id)
-    await database.save(user.id, "user", promt)
     await database.save(user.id, "assistant", answer) 
 
 

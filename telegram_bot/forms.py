@@ -181,6 +181,7 @@ async def chatgpt(message: Message, state: FSMContext):
     {"role": "user", "content": message.text}
             ] 
    await gpt.gemini(chat_id=sent.chat.id, message_id=sent.message_id, promt=str(messages), user=message.from_user)
+   await database.save(message.from_user.id, "user", message.text)
  except Exception as e:
   print(e) 
 
