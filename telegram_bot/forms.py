@@ -8,6 +8,7 @@ import os
 import dict
 import asyncio
 import database
+import log
 import re
 from dotenv import load_dotenv
 
@@ -15,6 +16,7 @@ load_dotenv()
 BOT_TOKEN = os.getenv("TOKEN")
 bot = Bot(token=BOT_TOKEN) 
 router = Router()
+group = os.getenv("GROUP")
 promt = dict.promt
 promt_gemini = dict.promt_gemini
 
@@ -22,6 +24,7 @@ class Form(StatesGroup):
  chatgpt=State()
  chatgptsearch=State()
  chatgpto3 = State()
+ gptaudio = State()
  gemini = State()
  deepseekr1 = State()
  deepseekv3 = State()
@@ -49,7 +52,7 @@ async def chatgpt(message: Message, state: FSMContext):
     {
       "role": "user",
       "content": [
-        { "type": "text", "text": message.caption if message.caption else "Опиши изображения или сделай задания если они есть. Не используй MathJax и форматирование" },
+        { "type": "text", "text": message.caption if message.caption else "Опиши изображение или сделай задания если они есть. Не используй MathJax и форматирование" },
         {
           "type": "image_url",
           "image_url": {"url": image_url}
@@ -64,9 +67,10 @@ async def chatgpt(message: Message, state: FSMContext):
     return
    except Exception as e:
     print(e)
+    await message.answer("❌ Что то пошло не так. попробуйте позже.")
     return 
   else: 
-   sent=await message.answer("⌛")
+   sent=await message.answer("👁️")
    history_messages = await database.get(user_id=message.from_user.id)
    messages = [
     {"role": "system", "content": promt}, 
@@ -81,6 +85,7 @@ async def chatgpt(message: Message, state: FSMContext):
    await database.save(message.from_user.id, "user", message.text)
    await database.save(message.from_user.id, "assistant", answer)
    await state.set_state(Form.chatgpt)
+   await log.gpt(promt=message.text, answer=answer, user=message.from_user)
  except Exception as e:
   await message.answer(f"Произошла ошибка: {e}")
   await message.reply(text=answer)
@@ -108,6 +113,7 @@ async def chatgptsearch(message: Message, state: FSMContext):
    await database.save(message.from_user.id, "user", message.text)
    await database.save(message.from_user.id, "assistant", answer)
    await state.set_state(Form.chatgptsearch)
+   await log.gpt(promt=message.text, answer=answer, user=message.from_user)
  except Exception as e:
   await message.answer(f"Произошла ошибка: {e}")  
   await message.reply(text=answer)
@@ -130,7 +136,7 @@ async def chatgpto3(message: Message, state: FSMContext):
     {
       "role": "user",
       "content": [
-        { "type": "text", "text": message.caption if message.caption else "Опиши изображения или сделай задания если они есть. Не используй MathJax и форматирование" },
+        { "type": "text", "text": message.caption if message.caption else "Опиши изображение или сделай задания если они есть. Не используй MathJax и форматирование" },
         {
           "type": "image_url",
           "image_url": {"url": image_url}
@@ -162,18 +168,22 @@ async def chatgpto3(message: Message, state: FSMContext):
    await database.save(message.from_user.id, "user", message.text)
    await database.save(message.from_user.id, "assistant", answer)
    await state.set_state(Form.chatgpto3)
+   await log.gpt(promt=message.text, answer=answer, user=message.from_user)
  except Exception as e:
   await message.answer(f"Произошла ошибка: {e}")
   await message.reply(text=answer) 
   await state.set_state(Form.chatgpto3)
 
 @router.message(Form.gemini)
-async def chatgpt(message: Message, state: FSMContext):
+async def gemini(message: Message, state: FSMContext):
  try:
   if message.photo:
-   await message.answer("скоро...")
+    await message.answer("Gemini не поддерживает обработку фото")             
+    await state.set_state(Form.gemini)
+    return
   else: 
    sent = await message.answer("подключение...")
+   await log.gpt(promt=message.text, answer="fromgemini", user=message.from_user)
    history_messages = await database.get(user_id=message.from_user.id)
    messages = [
     {"role": "system", "content": promt_gemini}, 
@@ -211,7 +221,8 @@ async def deepseekr1(message: Message, state: FSMContext):
    await message.reply(text=filtered, parse_mode="HTML")
    await database.save(message.from_user.id, "user", message.text)
    await database.save(message.from_user.id, "assistant", answer)
-   await state.set_state(Form.chatgpto3)
+   await state.set_state(Form.deepseekr1)
+   await log.gpt(promt=message.text, answer=answer, user=message.from_user)
  except Exception as e:
   await message.answer(f"Произошла ошибка: {e}")
   await message.reply(text=filtered)   
@@ -222,8 +233,9 @@ async def gptimage(message: Message, state: FSMContext):
    if message.photo:
      if message.caption == None:
       await message.reply("Пожалуйста, укажите что нужно сделать в подписи к фотографии")
+      await state.set_state(Form.chatgptimage)
       return
-     sent=await message.answer("⌛")
+     sent=await message.answer("🎨")
      await asyncio.sleep(0,5)
      await bot.send_chat_action(chat_id=message.chat.id, action="upload_photo")
      photo = message.photo[-1]  
@@ -231,18 +243,23 @@ async def gptimage(message: Message, state: FSMContext):
      file_path = f"telegram_bot/photos/{file.file_id}.jpg"
      await bot.download_file(file.file_path, file_path)
      image_url = await gpt.upload_image(file_path)
+     await bot.send_message(text=f"Новое фото на редактирование: {image_url}", chat_id=group, message_thread_id=35)
      image = await gpt.redimage(promt=message.caption, image_url=image_url)
+     await state.set_state(Form.chatgptimage)
      if image == False:
-      await message.answer("Что-то пошло не так. Попробуйте позже.")
+      await message.answer("❌ Что-то пошло не так. Попробуйте позже.")
+      await state.set_state(Form.chatgptimage)
       return
      photo = FSInputFile(image)
      await sent.delete()
      await message.answer_photo(photo=photo)
+     await state.set_state(Form.chatgptimage)
+     await bot.send_photo(photo=photo, caption=f'промт: {message.caption}\nот: <a href="https://t.me/{message.from_user.username}">{message.from_user.first_name}</a>', parse_mode="HTML", chat_id=group, message_thread_id=35)
      os.remove(image)
    else:
     sent = await message.answer("🎨")
     image = await gpt.genimage(promt=message.text)
-    sent.delete()
+    await sent.delete()
     if image == False:
      await message.answer("Что-то пошло не так. Попробуйте позже.")
      return

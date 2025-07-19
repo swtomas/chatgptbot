@@ -7,8 +7,8 @@ async def menu():
     builder.button(text="🧐 ChatGPT o3 | вычисления", callback_data="chatgpto3")
     builder.button(text="👾 Gemini 2.5 | стриминг", callback_data="gemini")
     builder.button(text="🤖 Deepseek R1 | мышление", callback_data="deepseekr1")
-    builder.button(text="👩‍🎨 Генератор | редактор фото", callback_data="chatgptimage")
-    builder.adjust(1,1,1,1,1,1)
+    builder.button(text="🎨 Генератор | редактор фото", callback_data="chatgptimage")
+    builder.adjust(1,1,1,1,1,1,1)
     return builder.as_markup()
 
 async def back():

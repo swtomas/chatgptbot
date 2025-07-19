@@ -29,3 +29,11 @@ async def check(message: Message):
     await message.answer("✅ Контекст очищен \n /new - поменять нейросеть")    
    except Exception as e:
      print(e) 
+
+@router.message(Command("changelog"))
+async def changelog(message: Message):
+   try: 
+    await database.delete(message.from_user.id)
+    await message.answer(text=dict.changelog, parse_mode="HTML")    
+   except Exception as e:
+     print(e)      

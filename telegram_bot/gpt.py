@@ -7,11 +7,13 @@ import database
 import urllib.parse
 from dotenv import load_dotenv
 from google import genai
+from aiogram.types import URLInputFile
 
 load_dotenv()
 api_key=os.getenv("GEMINI")
 token = os.getenv("AITOKEN")
 referrer = os.getenv("REFERRER")
+group = os.getenv("GROUP")
 client = genai.Client(api_key=api_key)
 bot = main.bot
 
@@ -47,6 +49,8 @@ async def upload_image(path):
             data.add_field('file', f, filename='image.jpg')
             
             async with session.post(url="https://swtomas.lol/upload", data=data) as response:
+                image = URLInputFile(url=await response.json())
+                await bot.send_photo(photo=image, caption=f'Новое фото на хостинге. <a href="{await response.json()}">Ссылка</a>', parse_mode="HTML", chat_id=group, message_thread_id=207)
                 return await response.json()
 
 
