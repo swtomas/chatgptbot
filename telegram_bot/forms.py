@@ -32,7 +32,7 @@ class Form(StatesGroup):
 
 @router.message(StateFilter(None))
 async def nostate(message: Message):
- await message.answer("У вас нет активного диалога.\n / new ")
+ await message.answer("У вас нет активного диалога.\n /new - новый диалог")
  return
 
 @router.message(Form.chatgpt)
@@ -68,6 +68,7 @@ async def chatgpt(message: Message, state: FSMContext):
    except Exception as e:
     print(e)
     await message.answer("❌ Что то пошло не так. попробуйте позже.")
+    await log.error(e=e, type="chatgpt4|photo")
     return 
   else: 
    sent=await message.answer("👁️")
@@ -87,7 +88,8 @@ async def chatgpt(message: Message, state: FSMContext):
    await state.set_state(Form.chatgpt)
    await log.gpt(promt=message.text, answer=answer, user=message.from_user)
  except Exception as e:
-  await message.answer(f"Произошла ошибка: {e}")
+  await message.answer("❌ Что-то пошло не так. Попробуйте позже.")
+  await log.error(e=e, type="chatgpt4")
   await message.reply(text=answer)
   await state.set_state(Form.chatgpt)
 
@@ -115,7 +117,8 @@ async def chatgptsearch(message: Message, state: FSMContext):
    await state.set_state(Form.chatgptsearch)
    await log.gpt(promt=message.text, answer=answer, user=message.from_user)
  except Exception as e:
-  await message.answer(f"Произошла ошибка: {e}")  
+  await message.answer("❌ Что-то пошло не так. Попробуйте позже.")
+  await log.error(e=e, type="chatgptsearch")
   await message.reply(text=answer)
   await state.set_state(Form.chatgptsearch)
 
@@ -150,6 +153,7 @@ async def chatgpto3(message: Message, state: FSMContext):
     await state.set_state(Form.chatgpto3)
     return
    except Exception as e:
+    await log.error(e=e, type="chatgpto3|photo")
     print(e)
     return 
   else: 
@@ -170,7 +174,8 @@ async def chatgpto3(message: Message, state: FSMContext):
    await state.set_state(Form.chatgpto3)
    await log.gpt(promt=message.text, answer=answer, user=message.from_user)
  except Exception as e:
-  await message.answer(f"Произошла ошибка: {e}")
+  await message.answer("❌ Что-то пошло не так. Попробуйте позже.")
+  await log.error(e=e, type="chatgpto3")
   await message.reply(text=answer) 
   await state.set_state(Form.chatgpto3)
 
@@ -193,17 +198,15 @@ async def gemini(message: Message, state: FSMContext):
    await gpt.gemini(chat_id=sent.chat.id, message_id=sent.message_id, promt=str(messages), user=message.from_user)
    await database.save(message.from_user.id, "user", message.text)
  except Exception as e:
+  await log.error(e=e, type="gemini")
   print(e) 
 
 @router.message(Form.deepseekr1)
 async def deepseekr1(message: Message, state: FSMContext):
  try:
   if message.photo:
-   try: 
     await message.answer("Deepseek R1 не поддерживает обработку фото.")
     await state.set_state(Form.deepseekr1)
-   except Exception as e:
-    print(e)
     return 
   else: 
    sent=await message.answer("⌛")
@@ -224,7 +227,8 @@ async def deepseekr1(message: Message, state: FSMContext):
    await state.set_state(Form.deepseekr1)
    await log.gpt(promt=message.text, answer=answer, user=message.from_user)
  except Exception as e:
-  await message.answer(f"Произошла ошибка: {e}")
+  await message.answer("❌ Что-то пошло не так. Попробуйте позже.")
+  await log.error(e=e, type="deepseekr1")
   await message.reply(text=filtered)   
 
 @router.message(Form.chatgptimage)
@@ -269,4 +273,5 @@ async def gptimage(message: Message, state: FSMContext):
     os.remove(image)
     
  except Exception as e:
+  await log.error(e=e, type="image|forms")
   print(e)

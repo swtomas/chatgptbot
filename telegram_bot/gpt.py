@@ -3,6 +3,7 @@ import os
 import random
 import string
 import main
+import log
 import database
 import urllib.parse
 from dotenv import load_dotenv
@@ -38,6 +39,7 @@ async def request(messages, model):
                 answer = result['choices'][0]['message']['content']
                 return answer
     except aiohttp.ClientError as e:
+        await log.error(e=e, type="gpt")
         return f"ошибка API: {e}"
     
 
@@ -76,6 +78,7 @@ async def genimage(promt):
                 return f"telegram_bot/{name}.jpg"
                 
  except aiohttp.ClientError as e:
+        await log.error(e=e, type="image|gen")
         print(e)
         return False
  
@@ -101,6 +104,7 @@ async def redimage(promt, image_url):
                 return f"telegram_bot/{name}.jpg"
                 
  except aiohttp.ClientError as e:
+        await log.error(e=e, type="image|redactor")
         print(e)
         return False 
  
